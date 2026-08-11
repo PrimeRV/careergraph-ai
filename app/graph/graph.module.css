@@ -1,0 +1,27 @@
+.root {
+  /* Graph-specific container scope: keeps any custom rules local to this module */
+}
+
+.canvas {
+  /* Explicit responsive graph viewport heights for Graph Explorer */
+  width: 100%;
+  height: 520px;
+  touch-action: none;
+}
+
+@media (min-width: 768px) {
+  .canvas {
+    height: 620px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .canvas {
+    height: 700px;
+  }
+}
+
+.controls {
+  /* minor helpers scoped to graph controls */
+  z-index: 60;
+}

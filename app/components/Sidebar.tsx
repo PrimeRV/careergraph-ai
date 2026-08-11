@@ -52,7 +52,7 @@ const navigation = [
   },
   {
     label: "About",
-    href: "#",
+    href: "/about",
     icon: Info,
   },
 ];
@@ -64,8 +64,10 @@ export default function Sidebar({
 }) {
   return (
     <aside className="hidden w-44 shrink-0 flex-col border-r border-white/10 bg-[#0b0e16] md:flex">
+
       {/* Logo */}
       <div className="px-4 py-5">
+
         <Link
           href="/"
           className="flex items-center gap-2.5"
@@ -84,14 +86,19 @@ export default function Sidebar({
             </p>
           </div>
         </Link>
+
       </div>
 
       {/* Main Navigation */}
       <nav className="flex-1 px-3 py-3">
+
         <div className="space-y-1">
+
           {navigation.map((item) => {
             const Icon = item.icon;
-            const isActive = active === item.label;
+
+            const isActive =
+              active === item.label;
 
             return (
               <Link
@@ -114,11 +121,14 @@ export default function Sidebar({
               </Link>
             );
           })}
+
         </div>
+
       </nav>
 
       {/* Bottom */}
       <div className="space-y-3 p-3">
+
         <Link
           href="#"
           className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-zinc-400 hover:bg-white/[0.04] hover:text-white"
@@ -129,12 +139,15 @@ export default function Sidebar({
 
         {/* Profile */}
         <div className="rounded-xl border border-white/10 bg-white/[0.025] p-2.5">
+
           <div className="flex items-center gap-2.5">
+
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600/20 text-violet-300">
               <UserRound size={15} />
             </div>
 
             <div className="min-w-0">
+
               <p className="truncate text-xs font-medium text-white">
                 Rohit Verma
               </p>
@@ -142,10 +155,15 @@ export default function Sidebar({
               <p className="truncate text-[10px] text-zinc-600">
                 Student
               </p>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
+
     </aside>
   );
 }

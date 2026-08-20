@@ -1,5 +1,5 @@
+import { driver } from "@/lib/neo4j";
 import { NextRequest, NextResponse } from "next/server";
-import { driver } from "@/lib/cognodb";
 
 /* ============================================================
    GET /api/applications

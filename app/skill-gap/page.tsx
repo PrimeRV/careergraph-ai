@@ -32,9 +32,9 @@ type SkillGap = {
 
 type SkillGapResponse = {
   success: boolean;
-  studentId: string;
-  skillGap: SkillGap[];
-  totalGaps: number;
+  studentId?: string;
+  skillGap?: unknown;
+  totalGaps?: number;
 };
 
 type Priority = "High" | "Medium" | "Recommended";
@@ -54,28 +54,42 @@ export default function SkillGapPage() {
         setError("");
 
         const params = new URLSearchParams(window.location.search);
-        const studentId = params.get("studentId") || DEFAULT_STUDENT_ID;
-        const jobId = params.get("jobId") || DEFAULT_JOB_ID;
+
+        const studentId =
+          params.get("studentId") || DEFAULT_STUDENT_ID;
+
+        const jobId =
+          params.get("jobId") || DEFAULT_JOB_ID;
 
         const response = await fetch(
-          `/api/skill-gap?studentId=${encodeURIComponent(studentId)}&jobId=${encodeURIComponent(jobId)}`,
+          `/api/skill-gap?studentId=${encodeURIComponent(
+            studentId
+          )}&jobId=${encodeURIComponent(jobId)}`,
           {
             cache: "no-store",
           }
         );
 
         if (!response.ok) {
-          throw new Error("Failed to load skill gaps");
+          throw new Error(
+            `Failed to load skill gaps (${response.status})`
+          );
         }
 
         const data: SkillGapResponse = await response.json();
 
         if (!data.success) {
-          throw new Error("Skill Gap API returned an error");
+          throw new Error(
+            "Skill Gap API returned an error"
+          );
         }
 
+        const safeSkillGaps = normalizeSkillGaps(
+          data.skillGap
+        );
+
         if (!cancelled) {
-          setSkillGaps(data.skillGap ?? []);
+          setSkillGaps(safeSkillGaps);
         }
       } catch (err) {
         console.error("Skill gap error:", err);
@@ -86,6 +100,8 @@ export default function SkillGapPage() {
               ? err.message
               : "Unable to load skill gaps."
           );
+
+          setSkillGaps([]);
         }
       } finally {
         if (!cancelled) {
@@ -102,24 +118,40 @@ export default function SkillGapPage() {
   }, []);
 
   const filteredSkills = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = String(search ?? "")
+      .trim()
+      .toLowerCase();
 
     if (!query) {
       return skillGaps;
     }
 
     return skillGaps.filter((skill) => {
+      const skillName = String(
+        skill?.skillName ?? ""
+      ).toLowerCase();
+
+      const category = String(
+        skill?.category ?? ""
+      ).toLowerCase();
+
       return (
-        skill.skillName.toLowerCase().includes(query) ||
-        skill.category.toLowerCase().includes(query)
+        skillName.includes(query) ||
+        category.includes(query)
       );
     });
   }, [skillGaps, search]);
 
   const categoryCount = useMemo(() => {
-    return new Set(
-      skillGaps.map((skill) => skill.category)
-    ).size;
+    const categories = skillGaps
+      .map((skill) =>
+        String(skill?.category ?? "")
+          .trim()
+          .toLowerCase()
+      )
+      .filter(Boolean);
+
+    return new Set(categories).size;
   }, [skillGaps]);
 
   const careerImpact =
@@ -131,7 +163,6 @@ export default function SkillGapPage() {
           ? "Medium"
           : "High";
 
-  // Show the loading state as the full page while the API request is running.
   if (loading) {
     return <LoadingState />;
   }
@@ -139,15 +170,11 @@ export default function SkillGapPage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#09090f] text-white">
       <div className="flex min-h-screen">
-
         {/* ===================================================== */}
         {/* SIDEBAR */}
         {/* ===================================================== */}
 
         <aside className="hidden w-[255px] shrink-0 border-r border-white/10 bg-[#0b0b12] lg:flex lg:flex-col">
-
-          {/* Logo */}
-
           <div className="px-5 pt-6">
             <Link
               href="/"
@@ -168,8 +195,6 @@ export default function SkillGapPage() {
               </div>
             </Link>
           </div>
-
-          {/* Navigation */}
 
           <nav className="mt-8 space-y-1 px-4">
             <SidebarLink
@@ -210,8 +235,6 @@ export default function SkillGapPage() {
             />
           </nav>
 
-          {/* Bottom profile */}
-
           <div className="mt-auto p-4">
             <div className="rounded-xl border border-white/10 bg-white/[0.025] p-3">
               <p className="text-[10px] text-zinc-500">
@@ -234,11 +257,7 @@ export default function SkillGapPage() {
         {/* ===================================================== */}
 
         <section className="min-w-0 flex-1">
-
-          {/* HEADER */}
-
           <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-white/10 bg-[#09090f]/95 px-4 backdrop-blur-md sm:px-6 lg:px-8">
-
             <div className="flex min-w-0 items-center gap-3">
               <Link
                 href="/"
@@ -258,10 +277,8 @@ export default function SkillGapPage() {
               </div>
             </div>
 
-            {/* Desktop search */}
-
+            {/* Desktop Search */}
             <div className="hidden w-[320px] items-center gap-3 rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2 md:flex">
-
               <Search
                 size={16}
                 className="shrink-0 text-zinc-600"
@@ -281,24 +298,18 @@ export default function SkillGapPage() {
                   type="button"
                   onClick={() => setSearch("")}
                   className="text-zinc-600 transition hover:text-white"
+                  aria-label="Clear search"
                 >
                   <X size={14} />
                 </button>
               )}
             </div>
-
           </header>
 
-          {/* CONTENT */}
-
           <div className="mx-auto w-full max-w-[1450px] p-4 sm:p-6 lg:p-8">
-
-            {/* ================================================= */}
             {/* MOBILE SEARCH */}
-            {/* ================================================= */}
 
             <div className="mb-6 flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2.5 md:hidden">
-
               <Search
                 size={16}
                 className="shrink-0 text-zinc-600"
@@ -318,32 +329,30 @@ export default function SkillGapPage() {
                   type="button"
                   onClick={() => setSearch("")}
                   className="text-zinc-600 hover:text-white"
+                  aria-label="Clear search"
                 >
                   <X size={14} />
                 </button>
               )}
             </div>
 
-            {/* ================================================= */}
             {/* PAGE HEADING */}
-            {/* ================================================= */}
 
             <section className="mb-7">
-
               <p className="mb-1 text-xs font-medium text-violet-400 sm:text-sm">
                 Career Development
               </p>
 
               <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-
                 <div>
                   <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
                     Your Skill Gaps
                   </h1>
 
                   <p className="mt-2 max-w-2xl text-xs leading-5 text-zinc-500 sm:text-sm">
-                    Skills you can develop to unlock more career
-                    opportunities and improve your job matches.
+                    Skills you can develop to unlock more
+                    career opportunities and improve your
+                    job matches.
                   </p>
                 </div>
 
@@ -365,16 +374,12 @@ export default function SkillGapPage() {
                     <ArrowRight size={13} />
                   </Link>
                 </div>
-
               </div>
             </section>
 
-            {/* ================================================= */}
             {/* SUMMARY */}
-            {/* ================================================= */}
 
             <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-
               <SummaryCard
                 title="Skills To Develop"
                 value={skillGaps.length}
@@ -395,50 +400,33 @@ export default function SkillGapPage() {
                 subtitle="Potential to improve matches"
                 icon={<TrendingUp size={19} />}
               />
-
             </section>
 
-            {/* ================================================= */}
-            {/* LOADING */}
-            {/* ================================================= */}
-
-            {loading && (
-              <LoadingState />
-            )}
-
-            {/* ================================================= */}
             {/* ERROR */}
-            {/* ================================================= */}
 
             {!loading && error && (
               <ErrorState message={error} />
             )}
 
-            {/* ================================================= */}
             {/* EMPTY */}
-            {/* ================================================= */}
 
-            {!loading && !error && skillGaps.length === 0 && (
-              <EmptyGapState />
-            )}
+            {!loading &&
+              !error &&
+              skillGaps.length === 0 && (
+                <EmptyGapState />
+              )}
 
-            {/* ================================================= */}
             {/* DATA */}
-            {/* ================================================= */}
 
             {!loading &&
               !error &&
               skillGaps.length > 0 && (
                 <>
-
                   {/* PRIORITY BANNER */}
 
                   <section className="mt-5 rounded-2xl border border-violet-500/20 bg-violet-500/[0.045] p-4 sm:p-5">
-
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
                       <div className="flex items-start gap-3">
-
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
                           <Sparkles size={19} />
                         </div>
@@ -449,11 +437,11 @@ export default function SkillGapPage() {
                           </h2>
 
                           <p className="mt-1 max-w-2xl text-[11px] leading-5 text-zinc-500 sm:text-xs">
-                            Learning these skills can improve your
-                            compatibility with more career opportunities.
+                            Learning these skills can improve
+                            your compatibility with more career
+                            opportunities.
                           </p>
                         </div>
-
                       </div>
 
                       <span className="w-fit shrink-0 rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-[10px] text-violet-300 sm:text-xs">
@@ -463,19 +451,13 @@ export default function SkillGapPage() {
                           : "skills"}{" "}
                         identified
                       </span>
-
                     </div>
-
                   </section>
 
-                  {/* ================================================= */}
-                  {/* SKILLS TO LEARN */}
-                  {/* ================================================= */}
+                  {/* SKILLS */}
 
                   <section className="mt-7">
-
                     <div className="mb-4 flex items-end justify-between gap-3">
-
                       <div>
                         <h2 className="text-base font-semibold sm:text-lg">
                           Skills To Learn
@@ -489,28 +471,22 @@ export default function SkillGapPage() {
                       <span className="text-[10px] text-zinc-600 sm:text-xs">
                         {filteredSkills.length} results
                       </span>
-
                     </div>
 
                     {filteredSkills.length > 0 ? (
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-
                         {filteredSkills.map(
                           (skill, index) => (
                             <SkillGapCard
-                              key={skill.skillId}
+                              key={`${skill.skillId}-${index}`}
                               skill={skill}
-                              priority={getPriority(
-                                index
-                              )}
+                              priority={getPriority(index)}
                             />
                           )
                         )}
-
                       </div>
                     ) : (
                       <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.015] p-10 text-center">
-
                         <Search
                           size={28}
                           className="mx-auto text-zinc-700"
@@ -527,30 +503,25 @@ export default function SkillGapPage() {
                         >
                           Clear Search
                         </button>
-
                       </div>
                     )}
-
                   </section>
 
-                  {/* ================================================= */}
                   {/* LEARNING PATH */}
-                  {/* ================================================= */}
 
                   <section className="mt-7 rounded-2xl border border-white/10 bg-[#0d1119] p-4 sm:p-5 lg:p-6">
-
                     <div className="mb-5">
                       <h2 className="text-base font-semibold sm:text-lg">
                         Recommended Learning Path
                       </h2>
 
                       <p className="mt-1 text-[11px] text-zinc-600 sm:text-xs">
-                        A simple progression for closing your career gaps.
+                        A simple progression for closing your
+                        career gaps.
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-
                       <LearningStep
                         step="01"
                         title="Build Foundations"
@@ -568,25 +539,20 @@ export default function SkillGapPage() {
                         title="Target Jobs"
                         description="Recheck your career matches after improving your skills."
                       />
-
                     </div>
-
                   </section>
 
-                  {/* ================================================= */}
                   {/* NEXT ACTION */}
-                  {/* ================================================= */}
 
                   <section className="mt-5 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-
                     <div>
                       <p className="text-sm font-medium">
                         Ready to improve your career match?
                       </p>
 
                       <p className="mt-1 text-[11px] text-zinc-600">
-                        Explore jobs and see which roles become available
-                        as you close your skill gaps.
+                        Explore jobs and see which roles become
+                        available as you close your skill gaps.
                       </p>
                     </div>
 
@@ -597,17 +563,68 @@ export default function SkillGapPage() {
                       Explore Jobs
                       <ArrowRight size={14} />
                     </Link>
-
                   </section>
-
                 </>
               )}
-
           </div>
         </section>
       </div>
     </main>
   );
+}
+
+/* ============================================================= */
+/* NORMALIZE API DATA */
+/* ============================================================= */
+
+function normalizeSkillGaps(
+  value: unknown
+): SkillGap[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item, index): SkillGap | null => {
+      if (
+        typeof item !== "object" ||
+        item === null
+      ) {
+        return null;
+      }
+
+      const record =
+        item as Record<string, unknown>;
+
+      const skillId = String(
+        record.skillId ??
+          record.id ??
+          `skill-gap-${index}`
+      );
+
+      const skillName = String(
+        record.skillName ??
+          record.name ??
+          "Unknown Skill"
+      ).trim();
+
+      const category = String(
+        record.category ??
+          "General"
+      ).trim();
+
+      return {
+        skillId,
+        skillName:
+          skillName || "Unknown Skill",
+        category:
+          category || "General",
+      };
+    })
+    .filter(
+      (skill): skill is SkillGap =>
+        skill !== null
+    );
 }
 
 /* ============================================================= */
@@ -657,9 +674,7 @@ function SummaryCard({
 }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-[#0d1119] p-4 sm:p-5">
-
       <div className="flex items-start justify-between gap-3">
-
         <div className="min-w-0">
           <p className="text-[10px] text-zinc-500 sm:text-xs">
             {title}
@@ -677,7 +692,6 @@ function SummaryCard({
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400 sm:h-10 sm:w-10">
           {icon}
         </div>
-
       </div>
     </div>
   );
@@ -705,9 +719,7 @@ function SkillGapCard({
 
   return (
     <div className="group rounded-2xl border border-white/10 bg-[#0d1119] p-4 transition hover:border-violet-500/30 hover:bg-violet-500/[0.025] sm:p-5">
-
       <div className="flex items-start justify-between gap-3">
-
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400 sm:h-11 sm:w-11">
           {icon}
         </div>
@@ -717,23 +729,19 @@ function SkillGapCard({
         >
           {priority}
         </span>
-
       </div>
 
       <div className="mt-5">
-
         <h3 className="text-sm font-semibold sm:text-base">
-          {skill.skillName}
+          {skill.skillName || "Unknown Skill"}
         </h3>
 
         <p className="mt-1 text-[10px] text-zinc-600 sm:text-xs">
-          {skill.category}
+          {skill.category || "General"}
         </p>
-
       </div>
 
       <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
-
         <div className="flex items-center gap-2 text-[10px] text-zinc-600 sm:text-xs">
           <BookOpen size={13} />
           Skill gap
@@ -741,14 +749,13 @@ function SkillGapCard({
 
         <Link
           href={`/skills?skill=${encodeURIComponent(
-            skill.skillName
+            skill.skillName || ""
           )}`}
           className="flex items-center gap-1 text-[10px] text-violet-400 transition hover:text-violet-300 sm:text-xs"
         >
           Learn
           <ChevronRight size={13} />
         </Link>
-
       </div>
     </div>
   );
@@ -769,9 +776,7 @@ function LearningStep({
 }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.015] p-4 transition hover:border-violet-500/20">
-
       <div className="flex items-center gap-3">
-
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-[10px] font-semibold text-violet-400">
           {step}
         </span>
@@ -779,13 +784,11 @@ function LearningStep({
         <h3 className="text-xs font-medium sm:text-sm">
           {title}
         </h3>
-
       </div>
 
       <p className="mt-3 text-[10px] leading-5 text-zinc-600 sm:text-xs">
         {description}
       </p>
-
     </div>
   );
 }
@@ -811,7 +814,9 @@ function getPriority(index: number): Priority {
 /* ============================================================= */
 
 function getSkillIcon(category?: string) {
-  const normalized = (category ?? "").toLowerCase();
+  const normalized = String(
+    category ?? ""
+  ).toLowerCase();
 
   if (normalized.includes("cloud")) {
     return <Cloud size={20} />;
@@ -841,15 +846,17 @@ function getSkillIcon(category?: string) {
 
 function LoadingState() {
   return (
-    <div className="mt-6 rounded-2xl border border-white/10 bg-[#0d1119] p-12 text-center">
+    <main className="min-h-screen bg-[#09090f] text-white">
+      <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center p-6">
+        <div className="w-full rounded-2xl border border-white/10 bg-[#0d1119] p-12 text-center">
+          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-white/10 border-t-violet-500" />
 
-      <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-white/10 border-t-violet-500" />
-
-      <p className="mt-4 text-xs text-zinc-500 sm:text-sm">
-        Analyzing your skill gaps...
-      </p>
-
-    </div>
+          <p className="mt-4 text-xs text-zinc-500 sm:text-sm">
+            Analyzing your skill gaps...
+          </p>
+        </div>
+      </div>
+    </main>
   );
 }
 
@@ -864,9 +871,7 @@ function ErrorState({
 }) {
   return (
     <div className="mt-6 rounded-2xl border border-red-500/20 bg-red-500/[0.04] p-5 sm:p-6">
-
       <div className="flex items-start gap-3">
-
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-400">
           <AlertTriangle size={17} />
         </div>
@@ -882,13 +887,14 @@ function ErrorState({
 
           <button
             type="button"
-            onClick={() => window.location.reload()}
+            onClick={() =>
+              window.location.reload()
+            }
             className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-[10px] text-red-300 transition hover:bg-red-500/20"
           >
             Try Again
           </button>
         </div>
-
       </div>
     </div>
   );
@@ -901,7 +907,6 @@ function ErrorState({
 function EmptyGapState() {
   return (
     <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.035] p-8 text-center sm:p-12">
-
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
         <Sparkles size={22} />
       </div>
@@ -911,12 +916,12 @@ function EmptyGapState() {
       </h2>
 
       <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-zinc-500">
-        We couldn't identify any major skill gaps for this career path.
-        Explore more jobs or continue strengthening your current skills.
+        We couldn't identify any major skill gaps for
+        this career path. Explore more jobs or continue
+        strengthening your current skills.
       </p>
 
       <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-
         <Link
           href="/jobs"
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-medium text-white hover:bg-violet-500"
@@ -931,7 +936,6 @@ function EmptyGapState() {
         >
           View Skills
         </Link>
-
       </div>
     </div>
   );

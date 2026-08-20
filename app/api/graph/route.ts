@@ -1,5 +1,5 @@
+import { driver } from "@/lib/neo4j";
 import { NextResponse } from "next/server";
-import { driver } from "@/lib/cognodb";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

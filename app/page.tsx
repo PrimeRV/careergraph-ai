@@ -10,7 +10,8 @@ import {
   ArrowRight,
   CircleAlert,
 } from "lucide-react";
-import AppShell from "./components/AppShell";
+import AppShell, { useAppSearch } from "./components/AppShell";
+import HighlightText from "../components/HighlightText";
 
 /* =============================================================== */
 /* TYPES */
@@ -791,6 +792,8 @@ function JobMatchRow({
 }: {
   job: Match;
 }) {
+  const search = useAppSearch();
+
   return (
     <Link
       href={`/jobs?jobId=${job.jobId}`}
@@ -802,11 +805,11 @@ function JobMatchRow({
         <div className="min-w-0">
 
           <p className="truncate text-xs font-medium sm:text-sm">
-            {job.jobTitle}
+            <HighlightText text={job.jobTitle} query={search} />
           </p>
 
           <p className="mt-0.5 truncate text-[10px] text-zinc-600 sm:text-[11px]">
-            {job.company}
+            <HighlightText text={job.company} query={search} />
           </p>
 
         </div>
@@ -973,6 +976,8 @@ function SkillGapCard({
 }: {
   gap: SkillGap;
 }) {
+  const search = useAppSearch();
+
   return (
     <Link
       href="/skill-gap"
@@ -984,11 +989,11 @@ function SkillGapCard({
         <div className="min-w-0">
 
           <p className="truncate text-xs font-medium sm:text-sm">
-            {gap.skillName}
+            <HighlightText text={gap.skillName} query={search} />
           </p>
 
           <p className="mt-1 text-[10px] text-zinc-600 sm:text-[11px]">
-            {gap.category}
+            <HighlightText text={gap.category} query={search} />
           </p>
 
         </div>
@@ -1012,6 +1017,8 @@ function ApplicationCard({
 }: {
   application: Application;
 }) {
+  const search = useAppSearch();
+
   return (
     <Link
       href={`/jobs?jobId=${application.jobId}`}
@@ -1019,11 +1026,11 @@ function ApplicationCard({
     >
 
       <p className="truncate text-xs font-medium sm:text-sm">
-        {application.jobTitle}
+        <HighlightText text={application.jobTitle} query={search} />
       </p>
 
       <p className="mt-1 truncate text-[10px] text-zinc-600 sm:text-[11px]">
-        {application.company}
+        <HighlightText text={application.company} query={search} />
       </p>
 
       <StatusBadge
@@ -1107,6 +1114,8 @@ function RecommendationCard({
   href: string;
   icon: React.ReactNode;
 }) {
+  const search = useAppSearch();
+
   return (
     <Link
       href={href}
@@ -1120,11 +1129,11 @@ function RecommendationCard({
       <div className="min-w-0">
 
         <p className="truncate text-xs font-medium sm:text-sm">
-          {title}
+          <HighlightText text={title} query={search} />
         </p>
 
         <p className="mt-1 truncate text-[10px] text-zinc-600 sm:text-[11px]">
-          {description}
+          <HighlightText text={description} query={search} />
         </p>
 
       </div>

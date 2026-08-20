@@ -1,4 +1,4 @@
-import { driver } from "@/lib/cognodb";
+import { driver } from "@/lib/neo4j";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {

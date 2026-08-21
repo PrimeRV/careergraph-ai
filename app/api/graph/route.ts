@@ -12,13 +12,13 @@ export async function GET(request: Request) {
   try {
     const result = await session.run(
       `
-      MATCH (student:Student {id: $studentId})
+      MATCH (student:Student { id: $studentId })
 
-      OPTIONAL MATCH (student)-[r1:HAS_SKILL]->(skill:Skill)
+      OPTIONAL MATCH (student)-[:HAS_SKILL]->(skill:Skill)
 
-      OPTIONAL MATCH (skill)-[r2:REQUIRES]-(job:Job)
+      OPTIONAL MATCH (job:Job)-[:REQUIRES]->(skill)
 
-      OPTIONAL MATCH (job)-[r3:OFFERED_BY]->(company:Company)
+      OPTIONAL MATCH (job)-[:OFFERED_BY]->(company:Company)
 
       RETURN
         student,
@@ -80,8 +80,19 @@ export async function GET(request: Request) {
 
     const relationshipsResult = await session.run(
       `
-      MATCH (student:Student {id: $studentId})
-      OPTIONAL MATCH (student)-[r1:HAS_SKILL]->(skill:Skill)
+      MATCH (student:Student { id: $studentId })
+
+      OPTIONAL MATCH (student)-[:HAS_SKILL]->(skill:Skill)
+
+      WITH student, collect(DISTINCT skill) AS studentSkills
+
+      UNWIND studentSkills AS skill
+
+      OPTIONAL MATCH (job:Job)-[:REQUIRES]->(skill)
+
+      WITH student, skill, collect(DISTINCT job) AS relatedJobs
+
+      OPTIONAL MATCH (job:Job)-[:REQUIRES]->(skill)
 
       RETURN
         student.id AS source,
@@ -90,9 +101,9 @@ export async function GET(request: Request) {
 
       UNION
 
-      MATCH (student:Student {id: $studentId})
+      MATCH (student:Student { id: $studentId })
       MATCH (student)-[:HAS_SKILL]->(skill:Skill)
-      MATCH (skill)-[:REQUIRES]->(job:Job)
+      MATCH (job:Job)-[:REQUIRES]->(skill)
 
       RETURN
         skill.id AS source,
@@ -101,8 +112,10 @@ export async function GET(request: Request) {
 
       UNION
 
-      MATCH (student:Student {id: $studentId})
-      MATCH (job:Job)-[:OFFERED_BY]->(company:Company)
+      MATCH (student:Student { id: $studentId })
+      MATCH (student)-[:HAS_SKILL]->(skill:Skill)
+      MATCH (job:Job)-[:REQUIRES]->(skill)
+      MATCH (job)-[:OFFERED_BY]->(company:Company)
 
       RETURN
         job.id AS source,
